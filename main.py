@@ -171,7 +171,7 @@ if __name__ == "__main__":
     min_energy = V
 
     n_fail = 0
-    while n_fail < 10:
+    while n_fail < 50:
         T -= alpha
         graph.initialize(T)
 
