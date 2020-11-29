@@ -1,7 +1,10 @@
 from copy import copy
+from datetime import datetime
 
+import _pickle
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 
 class AdjNode:
@@ -85,7 +88,6 @@ class Graph:
                     neighbor_L.append(i)
             temp = temp.next
 
-
 #         temp = self.FVS[v]
 #         print(neighbor_L)
 
@@ -127,15 +129,15 @@ class Graph:
     # Print the graph
 
     def print_status(self):
-        return
-        print("FVS : ", end='\t')
-        for i, node in self.FVS:
-            print(i, end=', ')
-        print()
-        print("L : ", end='\t')
-        for i, node in self.L:
-            print(i, end=', ')
-        print()
+        return 0
+        # print("FVS : ", end='\t')
+        # for i, node in self.FVS:
+        #     print(i, end=', ')
+        # print()
+        # print("L : ", end='\t')
+        # for i, node in self.L:
+        #     print(i, end=', ')
+        # print()
 
     def print_agraph(self):
         for i in range(self.V):
@@ -151,29 +153,93 @@ class Graph:
             print(node)
         print()
 
-if __name__ == "__main__":
-    V = 100
-    mean_deg = 10
-    alpha = 0.50
 
-    # Create graph and edges
-    graph = Graph(V)
-    for i in range(V):
-        for j in range(i + 1, V):
-            if i == j:
-                continue
-            if np.random.uniform() < mean_deg / V:
-                graph.add_edge(i, j)
+# if __name__ == "__main__":
+#     V = 100
+#     mean_deg = 10
+#     alpha = 0.50
 
-#     graph.print_agraph()
+#     # Create graph and edges
+#     graph = Graph(V)
+#     for i in range(V):
+#         for j in range(i + 1, V):
+#             if i == j:
+#                 continue
+#             if np.random.uniform() < mean_deg / V:
+#                 graph.add_edge(i, j)
 
+# #     graph.print_agraph()
+
+#     T = 0.6
+
+#     fvs_all = {}
+#     energy_all = {}
+#     min_energy = V
+#     best_t = T
+
+#     n_fail = 0
+#     while n_fail < 50:
+#         graph.initialize(T)
+
+#         N_t = 50
+#         fvs_l = []
+#         energy_l = []
+#         for _ in range(N_t):
+#             fvs, energy = graph.run()
+#             fvs_l.append(fvs)
+#             energy_l.append(energy)
+
+#         min_en = min(energy_l)
+#         if min_en < min_energy:
+#             min_energy = min_en
+#             n_fail = -1
+#             best_t = T
+
+#         fvs_all[T] = fvs_l[energy_l.index(min_en)]
+#         energy_all[T] = min_en
+
+#         n_fail += 1
+#         T -= T * alpha
+
+#     fig, ax = plt.subplots(nrows=1, ncols=1, dpi=300)
+#     x = list(energy_all.keys())
+#     y = list(energy_all.values())
+#     ax.plot(x, np.array(y) / V, label="Alpha: " + str(alpha))
+#     ax.set_ylabel("Energy Density")
+#     ax.set_xlabel("Temperature")
+#     ax.set_ylim([0.4, 0.8])
+#     ax.grid(True)
+#     ax.legend()
+#     plt.show()
+
+# #     print("Size of FVS : ", energy_all[best_t])
+# # #     print(len(fvs_all[best_t]))
+# #     print('FVS : ')
+# #     for vertex in fvs_all[best_t]:
+# #         print(vertex[0], end=", ")
+
+with open('graphs.pkl', 'rb') as f:
+    graphs = _pickle.load(f)
+
+results = []
+for graph_ in graphs:
+    dict_ = {}
+    dict_['n'] = graph_['No_of_vertices']
+    dict_['c'] = graph_['Mean_deg']
+
+    graph = Graph(dict_['n'])
+    for edge in graph_['Edges']:
+        graph.add_edge(edge[0], edge[1])
+
+    alpha = 0.98
     T = 0.6
 
     fvs_all = {}
     energy_all = {}
-    min_energy = V
+    min_energy = dict_['n']
     best_t = T
 
+    start_time = datetime.now()
     n_fail = 0
     while n_fail < 50:
         graph.initialize(T)
@@ -197,20 +263,12 @@ if __name__ == "__main__":
 
         n_fail += 1
         T -= T * alpha
+    end_time = datetime.now()
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, dpi=300)
-    x = list(energy_all.keys())
-    y = list(energy_all.values())
-    ax.plot(x, np.array(y) / V, label="Alpha: " + str(alpha))
-    ax.set_ylabel("Energy Density")
-    ax.set_xlabel("Temperature")
-    ax.set_ylim([0.4, 0.8])
-    ax.grid(True)
-    ax.legend()
-    plt.show()
+    dict_["Energy"] = energy_all[best_t]
+    dict_['Runtime'] = end_time.timestamp() - start_time.timestamp()
 
-#     print("Size of FVS : ", energy_all[best_t])
-# #     print(len(fvs_all[best_t]))
-#     print('FVS : ')
-#     for vertex in fvs_all[best_t]:
-#         print(vertex[0], end=", ")
+    results.append(dict_)
+
+df = pd.DataFrame(results)
+df.to_csv("Result.csv", index=False)
