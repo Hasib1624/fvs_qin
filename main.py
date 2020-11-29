@@ -1,5 +1,6 @@
 from copy import copy
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -105,14 +106,15 @@ class Graph:
 
             conflict_l = self.get_conflict()
 
-            if len(conflict_l) > 0:
+            del_E = -1 + len(conflict_l)
+            if del_E <= 0:
                 for i, nd in enumerate(self.L):
                     if nd[1].vertex in conflict_l:
                         self.FVS.append(self.L[i])
                         self.L.pop(i)
             else:
                 rnd = np.random.uniform()
-                if rnd <= np.exp(-(-1 + len(conflict_l)) / self.T):
+                if rnd < np.exp(-del_E / self.T):
                     for i, nd in enumerate(self.L):
                         if nd[1].vertex in conflict_l:
                             self.FVS.append(self.L[i])
@@ -150,7 +152,9 @@ class Graph:
         print()
 
 if __name__ == "__main__":
-    V = 6
+    V = 100
+    mean_deg = 10
+    alpha = 0.50
 
     # Create graph and edges
     graph = Graph(V)
@@ -158,21 +162,20 @@ if __name__ == "__main__":
         for j in range(i + 1, V):
             if i == j:
                 continue
-            if np.random.uniform() < 0.5:
+            if np.random.uniform() < mean_deg / V:
                 graph.add_edge(i, j)
 
-    graph.print_agraph()
+#     graph.print_agraph()
 
-    alpha = 0.99
-    T = 0.6 + alpha
+    T = 0.6
 
-    fvs_all = []
-    energy_all = []
+    fvs_all = {}
+    energy_all = {}
     min_energy = V
+    best_t = T
 
     n_fail = 0
     while n_fail < 50:
-        T -= alpha
         graph.initialize(T)
 
         N_t = 50
@@ -183,14 +186,31 @@ if __name__ == "__main__":
             fvs_l.append(fvs)
             energy_l.append(energy)
 
-        if min(energy_l) < min_energy:
-            min_energy = min(energy_l)
+        min_en = min(energy_l)
+        if min_en < min_energy:
+            min_energy = min_en
             n_fail = -1
+            best_t = T
+
+        fvs_all[T] = fvs_l[energy_l.index(min_en)]
+        energy_all[T] = min_en
 
         n_fail += 1
-        fvs_all += fvs_l
-        energy_all += energy_l
+        T -= T * alpha
 
-    print('FVS : ')
-    for vertex in fvs_all[energy_all.index(min(energy_all))]:
-        print(vertex[0], end=", ")
+    fig, ax = plt.subplots(nrows=1, ncols=1, dpi=300)
+    x = list(energy_all.keys())
+    y = list(energy_all.values())
+    ax.plot(x, np.array(y) / V, label="Alpha: " + str(alpha))
+    ax.set_ylabel("Energy Density")
+    ax.set_xlabel("Temperature")
+    ax.set_ylim([0.4, 0.8])
+    ax.grid(True)
+    ax.legend()
+    plt.show()
+
+#     print("Size of FVS : ", energy_all[best_t])
+# #     print(len(fvs_all[best_t]))
+#     print('FVS : ')
+#     for vertex in fvs_all[best_t]:
+#         print(vertex[0], end=", ")
