@@ -52,7 +52,7 @@ class Graph:
         for i, nd in enumerate(reversed(self.L)):
             rank[nd[0]] = i
         self.rank = rank
-#         print(self.rank)
+    #         print(self.rank)
 
     def get_conflict(self):
         self.gen_rank()
@@ -88,8 +88,8 @@ class Graph:
                     neighbor_L.append(i)
             temp = temp.next
 
-#         temp = self.FVS[v]
-#         print(neighbor_L)
+    #         temp = self.FVS[v]
+    #         print(neighbor_L)
 
         neighbor_n = len(neighbor_L)
         if neighbor_n == 0:
@@ -218,57 +218,62 @@ class Graph:
 # #     for vertex in fvs_all[best_t]:
 # #         print(vertex[0], end=", ")
 
-with open('graphs.pkl', 'rb') as f:
-    graphs = _pickle.load(f)
 
-results = []
-for graph_ in graphs:
-    dict_ = {}
-    dict_['n'] = graph_['No_of_vertices']
-    dict_['c'] = graph_['Mean_deg']
+def main():
+    with open('graphs.pkl', 'rb') as f:
+        graphs = _pickle.load(f)
 
-    graph = Graph(dict_['n'])
-    for edge in graph_['Edges']:
-        graph.add_edge(edge[0], edge[1])
+    results = []
+    for graph_ in graphs:
+        dict_ = {}
+        dict_['n'] = graph_['No_of_vertices']
+        dict_['c'] = graph_['Mean_deg']
 
-    alpha = 0.98
-    T = 0.6
+        graph = Graph(dict_['n'])
+        for edge in graph_['Edges']:
+            graph.add_edge(edge[0], edge[1])
 
-    fvs_all = {}
-    energy_all = {}
-    min_energy = dict_['n']
-    best_t = T
+        alpha = 0.98
+        T = 0.6
 
-    start_time = datetime.now()
-    n_fail = 0
-    while n_fail < 50:
-        graph.initialize(T)
+        fvs_all = {}
+        energy_all = {}
+        min_energy = dict_['n']
+        best_t = T
 
-        N_t = 50
-        fvs_l = []
-        energy_l = []
-        for _ in range(N_t):
-            fvs, energy = graph.run()
-            fvs_l.append(fvs)
-            energy_l.append(energy)
+        start_time = datetime.now()
+        n_fail = 0
+        while n_fail < 50:
+            graph.initialize(T)
 
-        min_en = min(energy_l)
-        if min_en < min_energy:
-            min_energy = min_en
-            n_fail = -1
-            best_t = T
+            N_t = 50
+            fvs_l = []
+            energy_l = []
+            for _ in range(N_t):
+                fvs, energy = graph.run()
+                fvs_l.append(fvs)
+                energy_l.append(energy)
 
-        fvs_all[T] = fvs_l[energy_l.index(min_en)]
-        energy_all[T] = min_en
+            min_en = min(energy_l)
+            if min_en < min_energy:
+                min_energy = min_en
+                n_fail = -1
+                best_t = T
 
-        n_fail += 1
-        T -= T * alpha
-    end_time = datetime.now()
+            fvs_all[T] = fvs_l[energy_l.index(min_en)]
+            energy_all[T] = min_en
 
-    dict_["Energy"] = energy_all[best_t]
-    dict_['Runtime'] = end_time.timestamp() - start_time.timestamp()
+            n_fail += 1
+            T -= T * alpha
+        end_time = datetime.now()
 
-    results.append(dict_)
+        dict_["Energy"] = energy_all[best_t]
+        dict_['Runtime'] = round(end_time.timestamp() - start_time.timestamp(), 6)
 
-df = pd.DataFrame(results)
-df.to_csv("Result.csv", index=False)
+        results.append(dict_)
+
+    df = pd.DataFrame(results)
+    df.to_csv("Result.csv", index=False)
+
+if __name__ == "__main__":
+    main()
